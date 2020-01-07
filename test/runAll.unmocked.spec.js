@@ -678,4 +678,36 @@ describe('runAll', () => {
       LOG → lint-staged automatic backup is missing!"
     `)
   })
+
+  it('should work with custom list of files', async () => {
+    // Create and commit an ugly file without running lint-staged
+    // This way the file will be available for the next step
+    await appendFile('test2.js', testJsFileUgly)
+    await execGit(['add', 'test2.js'])
+    await execGit(['commit', '-m test'])
+
+    // Add a pretty file that lint-staged/prettier won't care about
+    await appendFile('test.js', testJsFilePretty)
+    await execGit(['add', 'test.js'])
+
+    // Run lint-staged with a custom list of files
+    // Since test2.js is ugly, lint-staged will throw
+    await expect(
+      gitCommit({
+        config: { '*.js': 'prettier --list-different' },
+        files: ['test.js', 'test2.js']
+      })
+    ).rejects.toThrowErrorMatchingInlineSnapshot(`"Something went wrong"`)
+  })
+
+  it('should throw when passed an incorrect custom files option', async () => {
+    await expect(
+      gitCommit({
+        config: { '*.js': 'prettier --list-different' },
+        files: 'this should be an array of strings'
+      })
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `"Invalid files passed! \`files\` should be an array of absolute file paths (string)."`
+    )
+  })
 })

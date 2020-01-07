@@ -397,6 +397,8 @@ try {
 Parameters to `lintStaged` are equivalent to their CLI counterparts:
 
 ```js
+const lintStaged = require('lint-staged')
+
 const success = await lintStaged({
   configPath: './path/to/configuration/file',
   maxArgLength: null,
@@ -410,6 +412,8 @@ const success = await lintStaged({
 You can also pass config directly with `config` option:
 
 ```js
+const lintStaged = require('lint-staged')
+
 const success = await lintStaged({
   config: {
     '*.js': 'eslint --fix'
@@ -423,6 +427,26 @@ const success = await lintStaged({
 ```
 
 The `maxArgLength` option configures chunking of tasks into multiple parts that are run one after the other. This is to avoid issues on Windows platforms where the maximum length of the command line argument string is limited to 8192 characters. Lint-staged might generate a very long argument string when there are many staged files. This option is set automatically from the cli, but not via the Node.js API by default.
+
+### Can I use lint-staged to lint files other than staged in git?
+
+You probably shouldn't, as _lint-staged_ is pretty opinionated. Still, it's possible to use the Node.js API to pass a custom `files` list, which should be an array of file paths (absolute or relative to git root) as strings.
+
+```js
+const execa = require('execa')
+const lintStaged = require('lint-staged')
+const path = require('path')
+
+const allGitFiles = await execa('git', ['ls-files', '--exclude-standard'])
+const files = allGitFiles.map(file => path.resolve(file))
+
+await lintStaged({
+  config: {
+    '*.js': 'eslint --fix'
+  },
+  files
+})
+```
 
 ### Using with JetBrains IDEs _(WebStorm, PyCharm, IntelliJ IDEA, RubyMine, etc.)_
 
